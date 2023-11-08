@@ -1,5 +1,40 @@
 import React, { useState, useEffect } from 'react';
+
 import './App.css';
+
+async function resizeImage(file, ratio, quality) {
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  return new Promise((resolve, reject) => {
+    reader.onload = async () => {
+      const base64Image = reader.result.replace(/^data:image\/(png|jpeg|jpg);base64,/, '');
+      try {
+        const response = await fetch('http://127.0.0.1:5000/resize_image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            base64_image: base64Image,
+            ratio: ratio,
+            quality: quality,
+          }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          resolve(data.resized_image);
+        } else {
+          reject(new Error('Failed to resize image'));
+        }
+      } catch (error) {
+        reject(error);
+      }
+    };
+    reader.onerror = (error) => {
+      reject(error);
+    };
+  });
+}
 
 function TextGeneratorApp() {
   // Initialize state using local storage or default values
@@ -17,6 +52,32 @@ function TextGeneratorApp() {
   const [targetLanguage, setTargetLanguage] = useState('en_XX');
 
   const [isLoading, setIsLoading] = useState(false);
+
+  const [file, setFile] = useState(null);
+  const [ratio, setRatio] = useState(1);
+  const [quality, setQuality] = useState(80);
+  const [result, setResult] = useState(null);
+
+  const handleFileChange = (event) => {
+    setFile(event.target.files[0]);
+  };
+
+  const handleRatioChange = (event) => {
+    setRatio(event.target.value);
+  };
+
+  const handleQualityChange = (event) => {
+    setQuality(event.target.value);
+  };
+
+  const handleResize = async () => {
+    try {
+      const data = await resizeImage(file, ratio, quality);
+      setResult(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -179,6 +240,29 @@ return (
           onChange={(e) => setEditorText(e.target.value)}
         />
       </label>
+    </div>
+
+    <div>
+      <h1>Image Resizer</h1>
+      <div>
+        <label htmlFor="file">File:</label>
+        <input type="file" id="file" onChange={handleFileChange} />
+      </div>
+      <div>
+        <label htmlFor="ratio">Ratio:</label>
+        <input type="float" id="width" value={ratio} onChange={handleRatioChange} />
+      </div>
+      <div>
+        <label htmlFor="quality">Quality:</label>
+        <input type="number" id="quality" value={quality} onChange={handleQualityChange} />
+      </div>
+      <button onClick={handleResize}>Resize</button>
+      {result && (
+        <div>
+          <h2>Result:</h2>
+          <img src={`data:image/jpeg;base64,${result}`} alt="Resized Image" />
+        </div>
+      )}
     </div>
 
   </div>
