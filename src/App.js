@@ -28,7 +28,7 @@ function TextGeneratorApp() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text: [inputText] }),
+        body: JSON.stringify({ input_texts: [inputText] }),
       });
 
       if (response.ok) {
@@ -74,7 +74,7 @@ const handleTranslate = async (e) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ text: inputText,
+      body: JSON.stringify({ input_texts: [inputText],
       src_lang: srcLanguage,
       tgt_lang: targetLanguage }),
     });
